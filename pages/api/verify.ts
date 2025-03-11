@@ -4,20 +4,16 @@ import { LLMChain } from 'langchain/chains';
 import { PromptTemplate } from "@langchain/core/prompts";
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { config } from 'dotenv';
-import { log } from 'node:console';
 
 config();
-console.log("Tavily API Key:", process.env.TAVILY_API_KEY);
 
-
+const tavilySearch = new TavilySearchResults({
+});
 
 async function searchAndSummarize(query: string) {
-    const tavilySearch = new TavilySearchResults({
-    });
-    console.log(tavilySearch)
     const searchResults = await tavilySearch.invoke(query);
     const llm = new ChatGoogleGenerativeAI({
-        model: "gemini-pro",
+        model: "gemini-2.0-flash",
         temperature: 0,
         maxOutputTokens: 1000,
         maxRetries: 2,
@@ -52,13 +48,8 @@ async function searchAndSummarize(query: string) {
     });
     
 
-    const llmChain = prompt.pipe(llm)
-    try {
-        const 
-    } catch (error) {
-        
-    }
-    console.log(summary)
+    const llmChain = new LLMChain({ llm, prompt });
+    const summary = await llmChain.invoke({ results: searchResults });
     return summary;
 }
 
@@ -78,6 +69,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const result = await searchAndSummarize(query);
         return res.status(200).json({ query, result });
     } catch (error:any) {
+        console.log(error);
+        
         return res.status(500).json({ error: error.message });
     }
 }
